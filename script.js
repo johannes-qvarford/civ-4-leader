@@ -34,6 +34,7 @@ const LEADERS = [
   { id: 'genghis',       name: 'Genghis Khan',    civ: 'Mongolia',      traits: ['Aggressive', 'Imperialistic'] },
   { id: 'gilgamesh',     name: 'Gilgamesh',       civ: 'Sumeria',       traits: ['Protective', 'Creative'] },
   { id: 'hammurabi',     name: 'Hammurabi',       civ: 'Babylonia',     traits: ['Aggressive', 'Organized'] },
+  { id: 'hannibal',      name: 'Hannibal',        civ: 'Carthage',      traits: ['Charismatic', 'Financial'] },
   { id: 'hatshepsut',    name: 'Hatshepsut',      civ: 'Egypt',         traits: ['Spiritual', 'Creative'] },
   { id: 'huayna',        name: 'Huayna Capac',    civ: 'Inca',          traits: ['Financial', 'Industrious'] },
   { id: 'isabella',      name: 'Isabella',        civ: 'Spain',         traits: ['Expansive', 'Spiritual'] },
@@ -231,7 +232,18 @@ function createAutocomplete(index) {
   })
 
   input.addEventListener('blur', () => {
-    setTimeout(() => { dropdown.style.display = 'none' }, 200)
+    setTimeout(() => {
+      dropdown.style.display = 'none'
+      if (input.value.trim()) {
+        if (currentSuggestions.length > 0) {
+          selectSuggestion(currentSuggestions[0])
+        }
+      } else {
+        delete input.dataset.leaderId
+        savePicks()
+        render()
+      }
+    }, 200)
   })
 
   return { wrapper, input }
