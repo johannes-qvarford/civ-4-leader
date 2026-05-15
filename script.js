@@ -67,10 +67,25 @@ const LEADERS = [
 
 const STORAGE_KEY = 'civ4-leader-picks'
 
+function levenshtein(a, b) {
+  const m = a.length, n = b.length
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+  for (let i = 0; i <= m; i++) dp[i][0] = i
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+    }
+  }
+  return dp[m][n]
+}
+
 function savePicks() {
   const picks = []
   for (let i = 0; i < 8; i++) {
-    picks.push(document.getElementById(`leader-${i}`).value)
+    picks.push(document.getElementById(`leader-${i}`).dataset.leaderId || '')
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(picks))
 }
@@ -82,13 +97,112 @@ function loadPicks() {
     const picks = JSON.parse(saved)
     if (!Array.isArray(picks) || picks.length !== 8) return
     for (let i = 0; i < 8; i++) {
-      document.getElementById(`leader-${i}`).value = picks[i]
+      const input = document.getElementById(`leader-${i}`)
+      const leader = LEADERS.find(l => l.id === picks[i])
+      if (leader) {
+        input.value = `${leader.name} (${leader.civ})`
+        input.dataset.leaderId = leader.id
+      }
     }
   } catch {}
 }
 
 const selectorsEl = document.getElementById('selectors')
 const resultsEl = document.getElementById('results')
+
+function createAutocomplete(index) {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'autocomplete-wrapper'
+
+  const input = document.createElement('input')
+  input.type = 'text'
+  input.id = `leader-${index}`
+  input.autocomplete = 'off'
+  input.placeholder = 'Type a leader name...'
+  wrapper.appendChild(input)
+
+  const dropdown = document.createElement('div')
+  dropdown.className = 'suggestions'
+  wrapper.appendChild(dropdown)
+
+  let activeIndex = -1
+
+  function getSuggestions(query) {
+    if (!query.trim()) return []
+    const q = query.toLowerCase().trim()
+    const scored = LEADERS.map(l => {
+      const display = `${l.name} (${l.civ})`
+      const target = display.toLowerCase()
+      let d = levenshtein(q, target)
+      if (target.startsWith(q)) d -= q.length * 0.5
+      return { leader: l, display, score: d }
+    })
+    scored.sort((a, b) => a.score - b.score)
+    return scored.slice(0, 8)
+  }
+
+  function showDropdown(suggestions) {
+    dropdown.innerHTML = ''
+    activeIndex = -1
+    if (suggestions.length === 0) {
+      dropdown.style.display = 'none'
+      return
+    }
+    dropdown.style.display = 'block'
+    for (const [i, s] of suggestions.entries()) {
+      const item = document.createElement('div')
+      item.className = 'suggestion-item'
+      item.textContent = s.display
+      item.addEventListener('click', () => selectSuggestion(s))
+      item.addEventListener('mousedown', e => e.preventDefault())
+      dropdown.appendChild(item)
+    }
+  }
+
+  function selectSuggestion(s) {
+    input.value = s.display
+    input.dataset.leaderId = s.leader.id
+    dropdown.style.display = 'none'
+    savePicks()
+    render()
+  }
+
+  input.addEventListener('input', () => {
+    if (!input.value.trim()) {
+      delete input.dataset.leaderId
+      dropdown.style.display = 'none'
+      savePicks()
+      render()
+      return
+    }
+    showDropdown(getSuggestions(input.value))
+  })
+
+  input.addEventListener('keydown', e => {
+    const items = dropdown.querySelectorAll('.suggestion-item')
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      activeIndex = Math.min(activeIndex + 1, items.length - 1)
+      items.forEach((el, i) => el.classList.toggle('active', i === activeIndex))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      activeIndex = Math.max(activeIndex - 1, -1)
+      items.forEach((el, i) => el.classList.toggle('active', i === activeIndex))
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault()
+      items[activeIndex].click()
+    } else if (e.key === 'Escape') {
+      dropdown.style.display = 'none'
+      activeIndex = -1
+    }
+  })
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => { dropdown.style.display = 'none' }, 200)
+  })
+
+  return wrapper
+}
 
 for (let i = 0; i < 8; i++) {
   const group = document.createElement('div')
@@ -98,28 +212,8 @@ for (let i = 0; i < 8; i++) {
   label.textContent = `Leader ${i + 1}`
   label.htmlFor = `leader-${i}`
 
-  const select = document.createElement('select')
-  select.id = `leader-${i}`
-  select.dataset.index = i
-
-  const blank = document.createElement('option')
-  blank.value = ''
-  blank.textContent = '— Select —'
-  select.appendChild(blank)
-
-  for (const l of LEADERS) {
-    const opt = document.createElement('option')
-    opt.value = l.id
-    opt.textContent = `${l.name} (${l.civ})`
-    select.appendChild(opt)
-  }
-
-  select.addEventListener('change', () => {
-    savePicks()
-    render()
-  })
   group.appendChild(label)
-  group.appendChild(select)
+  group.appendChild(createAutocomplete(i))
   selectorsEl.appendChild(group)
 }
 
@@ -129,7 +223,7 @@ function render() {
   const selections = []
   for (let i = 0; i < 8; i++) {
     const sel = document.getElementById(`leader-${i}`)
-    selections.push(sel.value)
+    selections.push(sel.dataset.leaderId || '')
   }
 
   resultsEl.innerHTML = ''

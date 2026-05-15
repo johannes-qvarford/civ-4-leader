@@ -50,25 +50,51 @@ h1 {
   letter-spacing: 0.05em;
 }
 
-.selector-group select {
+.autocomplete-wrapper {
+  position: relative;
+}
+
+.autocomplete-wrapper input {
+  width: 100%;
   padding: 0.5rem 0.75rem;
   border: 1px solid #333;
   border-radius: 6px;
   background: #16213e;
   color: #e0e0e0;
   font-size: 0.9rem;
-  cursor: pointer;
   outline: none;
   transition: border-color 0.2s;
 }
 
-.selector-group select:focus {
+.autocomplete-wrapper input:focus {
   border-color: #f0c27f;
 }
 
-.selector-group select option {
+.suggestions {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   background: #16213e;
-  color: #e0e0e0;
+  border: 1px solid #333;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  z-index: 10;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+  background: #1a1a3e;
 }
 
 #results {
