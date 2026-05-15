@@ -51,6 +51,28 @@ const LEADERS = [
   { id: 'shaka',         name: 'Shaka',           civ: 'Zulu',          traits: ['Aggressive', 'Expansive'],        image: '3/3d/Shaka_(Civ4).png' },
 ]
 
+const STORAGE_KEY = 'civ4-leader-picks'
+
+function savePicks() {
+  const picks = []
+  for (let i = 0; i < 8; i++) {
+    picks.push(document.getElementById(`leader-${i}`).value)
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(picks))
+}
+
+function loadPicks() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (!saved) return
+    const picks = JSON.parse(saved)
+    if (!Array.isArray(picks) || picks.length !== 8) return
+    for (let i = 0; i < 8; i++) {
+      document.getElementById(`leader-${i}`).value = picks[i]
+    }
+  } catch {}
+}
+
 const selectorsEl = document.getElementById('selectors')
 const resultsEl = document.getElementById('results')
 
@@ -78,11 +100,16 @@ for (let i = 0; i < 8; i++) {
     select.appendChild(opt)
   }
 
-  select.addEventListener('change', () => render())
+  select.addEventListener('change', () => {
+    savePicks()
+    render()
+  })
   group.appendChild(label)
   group.appendChild(select)
   selectorsEl.appendChild(group)
 }
+
+loadPicks()
 
 function render() {
   const selections = []
