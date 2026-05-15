@@ -1,4 +1,4 @@
-const CDN_BASE = 'https://static.wikia.nocookie.net/civilization/images'
+const IMG_PATH = 'img/leaders'
 
 const TRAIT_COLORS = {
   Aggressive: '#c0392b',
@@ -145,7 +145,7 @@ function render() {
 
     if (leader) {
       const img = document.createElement('img')
-      img.src = `${CDN_BASE}/${leader.image}/revision/latest`
+      img.src = `${IMG_PATH}/${leader.id}.webp`
       img.alt = leader.name
       img.loading = 'lazy'
       portrait.appendChild(img)
