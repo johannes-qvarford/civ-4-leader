@@ -95,9 +95,23 @@ function getSuggestions(query) {
   const q = query.toLowerCase().trim()
   const scored = LEADER_DISPLAYS.map(({ leader, display }) => {
     const target = display.toLowerCase()
-    let d = levenshtein(q, target)
-    if (target.startsWith(q)) d -= q.length * 0.5
-    return { leader, display, score: d }
+    const d = levenshtein(q, target)
+    const maxLen = Math.max(q.length, target.length)
+    let score = maxLen > 0 ? d / maxLen : 1
+
+    if (target.startsWith(q)) {
+      score -= 0.5
+    } else if (target.includes(q)) {
+      score -= 0.3
+    }
+
+    let prefixLen = 0
+    while (prefixLen < q.length && prefixLen < target.length && q[prefixLen] === target[prefixLen]) {
+      prefixLen++
+    }
+    if (prefixLen > 0) score -= prefixLen * 0.05
+
+    return { leader, display, score }
   })
   scored.sort((a, b) => a.score - b.score)
   return scored.slice(0, MAX_SUGGESTIONS)
