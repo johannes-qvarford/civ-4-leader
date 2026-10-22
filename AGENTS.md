@@ -1,36 +1,36 @@
-# Civ 4 Leader Picker — AGENTS.md
+# Civ 4 Leader Picker
 
 ## Project
 
-Static single-page web app: pick up to 8 Civ 4 leaders. No build, no tests, no CI, no package manager.
+Static, single-page app for choosing up to 8 Civilization IV leaders. It uses plain HTML, CSS, and JavaScript; there is no build step, package manager, test suite, or CI configuration.
 
-- **Run**: open `index.html` in a browser (or `npx serve .`)
-- **Verify**: manual only — inspect in browser after changes
+- **Run**: open `index.html` in a browser (or serve the directory, for example with `npx serve .`).
+- **Verify**: manually inspect the app in a browser after changes.
 
 ## Structure
 
 ```
-index.html       → entry point, loads style.css + script.js
-script.js        → all JS (vanilla, no modules, no imports)
-style.css        → all CSS
-img/leaders/     → 48 WebP portraits, one per leader
+index.html       → page shell; loads `style.css` and `script.js`
+script.js        → leader data, autocomplete, persistence, and rendering
+style.css        → all application styles
+img/leaders/     → 52 WebP leader portraits, named `<leader-id>.webp`
 ```
 
-## Key facts
+## Application details
 
-- **`script.js`**: `LEADERS` array (48 entries), each with `{ id, name, civ, traits[], image }`. The `image` field is unused by display code — portraiture loads as `` `img/leaders/${leader.id}.webp` ``.
-- **localStorage key**: `civ4-leader-picks` (JSON array of 8 leader IDs). `loadPicks()` runs before `render()` at startup.
-- **DOM**: 8 `<select id="leader-0">` through `<select id="leader-7">`. Value is the leader `id` or `""`.
-- **Adding a leader**: append to `LEADERS` array + add `img/leaders/<id>.webp`.
-- **Trait colors**: `TRAIT_COLORS` map in `script.js:3-15` — hardcoded hex per trait.
+- `LEADERS` in `script.js` contains 52 records with `{ id, name, civ, traits[] }`. The IDs are unique and each has a matching portrait. Portrait paths are assembled from `IMG_PATH` and the leader ID; there is no `image` property in the data.
+- The UI creates 8 labeled text inputs (`leader-0` through `leader-7`) at startup. They use autocomplete suggestions based on leader name and civilization, with fuzzy ranking; up to `MAX_SUGGESTIONS` matches are shown. Keyboard arrows navigate suggestions, Enter selects, and Escape closes the list.
+- Selected leaders are displayed as 8 cards in `#results`, with portrait, name, civilization, and trait badges. `TRAIT_COLORS` maps traits to badge background colors.
+- Picks are persisted under localStorage key `civ4-leader-picks` as a JSON array of 8 leader IDs or empty strings. `loadPicks()` restores valid IDs before the initial render.
+- To add a leader, add a record to `LEADERS` and a matching `img/leaders/<id>.webp` portrait. Keep IDs and filenames lowercase kebab-case.
 
-## Style conventions
+## Conventions
 
-- **JS**: `const` over `let`, no `var`. Top-level `function` declarations. DOM built with `createElement` + `appendChild`, never `innerHTML` for template strings. `document.getElementById` for lookups.
-- **CSS**: kebab-case class names, CSS Grid layout, dark theme (`#1a1a2e` bg, `#16213e` card, `#f0c27f` gold accent).
-- **HTML**: blocking `<script>` at end of `<body>`, synchronous stylesheet in `<head>`.
-- **IDs/kebab-case**: leader IDs, image filenames, DOM ids all kebab-case.
+- Keep the app dependency-free and compatible with direct static hosting; JavaScript is a regular script, not a module.
+- Use the existing DOM-building functions and class names when extending the UI. The code uses `createElement`/`appendChild` for elements, and clears generated suggestion/result contents with `innerHTML = ''`.
+- Keep CSS class names kebab-case and follow the existing dark palette (`#1a1a2e` page background, `#16213e` cards/inputs, `#f0c27f` gold accent) and grid-based layouts.
+- `index.html` loads the stylesheet in the `<head>` and the script at the end of `<body>`.
 
-## No tooling
+## Tooling
 
-No linter, formatter, typechecker, or bundler configured. The `.gitignore` has `node_modules/` pre-added.
+There is no configured linter, formatter, typechecker, bundler, automated test runner, or CI. `.gitignore` currently ignores `node_modules/`.
